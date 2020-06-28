@@ -1,73 +1,97 @@
 <?php
 
 include("connect.php");
-$name=$email=$password=$con_pass="";
-$email_error=$password_error=$con_pass_error="";
 
-if($_SERVER['REQUEST_METHOD']=='POST'){
+$name = $email = $password = $con_pass="";
+$emai_err= $password_err= $con_pass_err="";
 
+if($_SERVER["REQUEST_METHOD"] == "POST")
+{
+ //taking the input from the post req   
+$name = $_POST["name"];
+$email = $_POST["email"];
 
-    $name=$_POST['name'];
-    
-    $sql="select id from user where email=? ";
-
-    if($stmt=mysqli_prepare($link,$sql)){
-
-        mysqli_stmt_bind_param($stmt,"s",$param_email);
-        $param_email=$_POST['email'];
-
-        if(mysqli_stmt_execute($stmt)){
-
-            mysqli_stmt_store_result($stmt);
-
-            if(mysqli_stmt_num_rows($stmt)==1){
-
-                $email_error="This email already exists";
+//checking if email field ids checked
+   if(isset($_POST["email"])){
+         $sql ="SELECT id FROM `user` WHERE email='$email'";//query to check if email exits
+        $result = mysqli_query($link,$sql);
+        if(mysqli_num_rows($result)>0){ //
+            $emai_err = "Email already exist";
+        }
+        else{ // if does not exit 
+            if(strlen(trim($_POST["password"]))<6){ //checking wheatrher password is 
+                $password_err = "Password must have atleast 6 charecters.";
             }
             else{
-
-                $email=$_POST["email"];
+                $password = $_POST["password"];
             }
+            
+            $con_pass = $_POST["con_pass"];
+            if($password != $con_pass){ // checking password matches or not
+                $con_pass_err = "Password did not match";
+            }
+       
+    
+            if(empty($emai_err) && empty($password_err) && empty($con_pass_err))
+            {
+                $sql = "INSERT INTO user(name,email,password) VALUES(?,?,?)";
+                if($stmt = mysqli_prepare($link, $sql)){
+            // Bind variables to the prepared statement as parameters
+                    mysqli_stmt_bind_param($stmt, "sss", $param_username,$param_email, $param_password);
+            
+            // Set parameters
+                    $param_username = $name;
+                    $param_email = $email;
+                    $param_password = password_hash($password, PASSWORD_DEFAULT); // Creates a password hash
+            
+            // Attempt to execute the prepared statement
+                    if(mysqli_stmt_execute($stmt)){
+                    // Redirect to login page
+                        header("location: index.html");
+                    }
+                    else{
+                        echo "Something went wrong. Please try again later.";
+                         }   
+
+                } 
+            }       
         }
     }
+   
 }
-
-
-
-
 ?>
-
-
 
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="canonical" href="https://getbootstrap.com/docs/3.4/examples/starter-template/">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign up</title>
-    <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <link href="css/ie10-viewport-bug-workaround.css" rel="stylesheet">
-    <!-- Custom styles for this template -->
-    <link href="css/style.css" rel="stylesheet">
-    
-  </head>
-
-  <body>
-<form action="post">
-    <h2>Sign up form</h1>
-    <label>Name:</label><br>
-    <input type="text" name="name" required><br><br>
-    <label>Email id:</label><br>
-    <input type="email" name="email" id="" required><br><br>
-    <label>Password:</label><br>
-    <input type="password" name="password" id="" required><br><br>
-    <label>Confirm password:</label><br>
-    <input type="password" name="con_pass" id="" required><br><br>
-    <input type="submit" value="Submit"><br><br>
+</head>
+<body>
+    <h1>Signup</h1>
+   
+    <form method="POST">
+    <label >Name:</label>
+    <input type="text" name="name" required>
+    <br><br>
+    <label >email</label>
+    <input type="email" name="email" id="" required>
+    <br><br>
+    <span><?php echo $emai_err; ?></span>
+    <br><br>
+    <label >Password</label>
+    <input type="password" name="password" id="" required>
+    <br><br>
+    <span><?php echo $password_err; ?></span>
+    <br><br>
+    <label for="">Confirm Password</label>
+    <input type="password" name="con_pass" id="" required>
+    <br><br>
+    <span><?php echo $con_pass_err;?></span>
+    <br><br>
+    <input type="submit" value="Sumit">
+    </form>
 </body>
 </html>
